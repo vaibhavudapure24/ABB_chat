@@ -1,0 +1,709 @@
+ 
+stock 
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABB BOT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font and clean WHITE background styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa; /* Subtle off-white background for depth */
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+            color: #374151;
+        }
+        /* Frosted Glass Effect for the Chat Container - Enhanced Shadow */
+        #chat-container {
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.95); /* Nearly opaque white */
+            border: 1px solid #fee2e2; /* Softer border */
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1); /* Deeper, softer shadow */
+            transition: all 0.3s ease;
+        }
+        /* Custom scrollbar styling */
+        #chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-window::-webkit-scrollbar-track {
+            background: #fdf2f2;
+        }
+        #chat-window::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 4px;
+        }
+        #chat-window::-webkit-scrollbar-thumb:hover {
+            background: #f87171;
+        }
+        /* Fade in animation for messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        /* Mic Recording Pulse Animation */
+        .recording {
+            animation: pulse-mic 1s infinite;
+        }
+        @keyframes pulse-mic {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        /* Input Field Styling */
+        #message-input {
+            background-color: white;
+            color: #374151;
+            border: 1px solid #e5e7eb; /* Lighter border */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Softer inner shadow */
+        }
+        #message-input::placeholder {
+            color: #9ca3af;
+        }
+        /* Sample Question Button Styles - Tighter design */
+        .sample-question {
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+            border-radius: 0.5rem; /* Slightly smaller radius */
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
+        }
+        .sample-question:hover {
+            transform: translateY(-1px); /* More subtle lift */
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.1);
+            background-color: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+        .sample-question.active {
+            background-color: #dc2626;
+            color: white;
+            box-shadow: 0 2px 5px rgba(220, 38, 38, 0.4);
+        }
+        /* Card Container Styling - Enhanced Look */
+        .topic-card {
+            border-radius: 1.25rem; /* Larger radius for modern look */
+            border: 1px solid #fecaca; /* Light red border */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Floating effect */
+            background-color: white;
+            transition: all 0.3s;
+        }
+        .topic-card:hover {
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.1); /* Shadow hint of accent color */
+        }
+        /* File Upload Button Styling (Still present but hidden since Query Custom File is gone) */
+        #file-upload-label {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        #file-upload-input {
+            opacity: 0;
+            position: absolute;
+            z-index: -1;
+            width: 0;
+            height: 0;
+        }
+        #upload-status {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            font-size: 0.6rem;
+            color: #10b981;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div id="chat-container" class="w-full max-w-lg mx-4 rounded-3xl shadow-2xl flex flex-col overflow-hidden" style="height: 95vh; max-height: 800px;">
+        <!-- Header -->
+        <div class="p-5 bg-gradient-to-r from-red-600 to-rose-700 flex items-center justify-between text-white shadow-lg">
+            <div class="flex items-center">
+                 <div class="relative w-12 h-12">
+                     <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center p-1 shadow-md">
+                         <!-- UPDATED LOGO SOURCE -->
+                         <img src="ABB.png" alt="ABB Logo" class="h-8 w-auto">
+                     </div>
+                     <span class="absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full bg-green-400 border-2 border-white"></span>
+                 </div>
+                 <div class="ml-4">
+                     <h1 class="text-xl font-bold">ABB BOT</h1>
+                     <!-- RESTORING STATUS TEXT BELOW NAME -->
+                     <p class="text-sm text-red-100/70">Active now</p>
+                 </div>
+            </div>
+            <button id="tts-btn" class="text-white/80 p-3 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white transition-colors">
+                <svg id="tts-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <svg id="tts-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /> <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l-5-5m0 5l5-5" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto bg-white">
+            <!-- Initial Bot Message -->
+            <div class="message-fade-in flex items-start gap-4 justify-start mb-6">
+                <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center flex-shrink-0 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm max-w-xs" style="border-top-left-radius: 0;">
+                    <p class="text-sm text-gray-700">Welcome! I am your ABB Obsolescence Analyst Bot. I provide concise data lookups, risk forecasts, and mitigation plans based on the latest Q3 supply chain data.</p>
+                </div>
+            </div>
+
+            <!-- Guide Options for LLM Features - CONSOLIDATED AND PROMOTED TO THE START -->
+            <div id="sample-questions" class="my-8 message-fade-in" style="animation-delay: 0.5s;">
+                <div class="grid grid-cols-1 gap-4">
+                    
+                    <!-- STOCK OBSOLESCENCE COLUMN (Full Width) -->
+                    <div class="topic-card space-y-2 p-4 flex flex-col items-center w-full">
+                        <!-- UPDATED Obsolescence Icon: Cube with Warning -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <path d="M8.5 13.5l3.5-2 3.5 2"></path>
+                            <line x1="12" y1="12" x2="12" y2="17"></line>
+                        </svg>
+                        <p class="text-sm font-bold text-gray-700">Stock Obsolescence</p>
+                        <!-- CONSOLIDATED LIST (Now spans 2 columns inside the single card) -->
+                        <div class="grid grid-cols-2 gap-2 w-full pt-2">
+                            
+                            <!-- NEW & EXISTING DATA LOOKUPS -->
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">Total Obsolescence Value (July)</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">What is the Total Provision in KUSD?</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">Manual vs Auto Provision Value</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">High-Value Obsolescence Part</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">Obsolescence Risk Report (Q3)</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">Consumption vs Stock for Key Parts</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">Find the status of Material P/N 4202635010.1005.</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">What is the highest single provision value in the Manual Dump?</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200">How much was the consumption added in July 2025?</button>
+                            
+                            <!-- LLM FEATURES -->
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200" data-action="start-future-forecast">🔮 Future Risk Forecast</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200" data-action="start-mitigation-plan">✨ Generate Mitigation Plan</button>
+                            <button class="sample-question w-full bg-white text-red-600 text-xs font-medium py-2 px-2 border border-red-200" data-action="start-part-lookup">🔍 Part Number Quick Lookup</button>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            <!-- End Guide Options -->
+
+        </div>
+        
+        <!-- Typing indicator -->
+        <div id="typing-indicator" class="px-6 pb-2 hidden">
+            <div class="flex items-start gap-4 justify-start">
+                <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center flex-shrink-0 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-2xl shadow-sm" style="border-top-left-radius: 0;">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <span class="h-2 w-2 bg-red-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                        <span class="h-2 w-2 bg-red-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                        <span class="h-2 w-2 bg-red-400 rounded-full animate-bounce"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-gray-200/50">
+            <form id="chat-form" class="flex items-center gap-2">
+                <!-- FILE UPLOAD BUTTON (Still present but hidden since Query Custom File is gone, but keeping the slot empty) -->
+                <div class="relative flex-shrink-0">
+                    <!-- Note: File upload logic is technically unused now but kept for code stability -->
+                    <label for="file-upload-input" id="file-upload-label" class="text-gray-300 p-3 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                    </label>
+                    <input type="file" id="file-upload-input" accept=".csv" onchange="window.handleFileUpload(event)">
+                    <span id="upload-status" class="text-green-600 text-xs hidden"></span>
+                </div>
+
+                <button type="button" id="mic-btn" class="text-gray-500 p-3 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                </button>
+                <input type="text" id="message-input" placeholder="Ask me anything..." autocomplete="off" class="flex-1 py-3 px-5 border-gray-300 border bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 transition shadow-sm">
+                <button type="submit" class="bg-gradient-to-br from-red-600 to-rose-600 text-white p-3 rounded-full hover:from-red-700 hover:to-rose-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-transform transform hover:scale-110 shadow-lg flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Creator Credit -->
+        <div class="text-center text-xs text-gray-400 py-2">
+            Created by Vaibhav
+        </div>
+    </div>
+
+    <!-- Firebase Imports and Setup (CRITICAL FOR ENVIRONMENT) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- MANDATORY GLOBAL VARIABLES ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- GLOBAL STATE ---
+        window.chatHistory = []; // Conversation history for the API
+        window.isAwaitingResponse = false;
+        window.userId = 'loading...'; // Global user ID state
+        window.activeLLMFeature = null; // State for multi-step LLM features
+        window.uploadedFileData = {}; // Storage for uploaded CSV data
+
+        // --- FIREBASE INITIALIZATION ---
+        window.initializeFirebase = async function() {
+            setLogLevel('Debug');
+            let auth;
+            let db;
+
+            // Authentication/Config check
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                console.warn("Firebase config not available. Running in non-persistent, unauthenticated mode.");
+                window.userId = crypto.randomUUID();
+                return; // Exit if no config, but globals are set above
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Authentication flow
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Auth state listener
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                    } else {
+                        window.userId = 'unauthenticated_' + crypto.randomUUID().substring(0, 8);
+                    }
+                    console.log(`Authenticated with userId: ${window.userId}`);
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                window.userId = 'error_' + crypto.randomUUID().substring(0, 8);
+            }
+        };
+
+        // Call the initialization function
+        window.onload = () => {
+             window.initializeFirebase();
+             // Also call the original scroll to bottom logic
+             const chatWindow = document.getElementById('chat-window');
+             if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight;
+        };
+    </script>
+
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const sampleQuestionsContainer = document.getElementById('sample-questions');
+        const micBtn = document.getElementById('mic-btn');
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsIconOn = document.getElementById('tts-icon-on');
+        const ttsIconOff = document.getElementById('tts-icon-off');
+        const uploadStatusElement = document.getElementById('upload-status');
+
+        // --- API CONFIG FIX: Using secure model and blank key for Canvas ---
+        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025';
+        const apiKey = ""; // Left blank for Canvas environment to provide
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+        
+        if (typeof window.chatHistory === 'undefined') window.chatHistory = [];
+        if (typeof window.activeLLMFeature === 'undefined') window.activeLLMFeature = null;
+        
+        let isTtsEnabled = false;
+
+        // --- LLM Call for Mitigation Plan ---
+        async function generateMitigationPlan(partName) {
+            const systemInstruction = `You are a world-class Supply Chain Risk Analyst for ABB. Your task is to propose three concise, bulleted steps for managing the obsolescence risk of the given component. Focus on procurement and engineering solutions. The response MUST be exactly three short, clear bullet points.`;
+
+            const userQuery = `Generate a 3-point mitigation plan for the obsolescence risk of the component: "${partName}".`;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                tools: [{ "google_search": {} }] 
+            };
+            
+            return await callGeminiAPI(payload);
+        }
+        
+        // --- LLM Call for Future Risk Forecast ---
+        async function generateFutureForecast(partNumber, targetDate) {
+            const partData = MATERIAL_LOOKUP_DATA[partNumber.toUpperCase().trim()];
+            
+            if (!partData) {
+                 return `I cannot create a forecast for **${partNumber}** because that specific Material No. was not found in the July 2025 master data.`;
+            }
+
+            const currentStatus = `Material: ${partData.desc} (P/N: ${partNumber}). Current Status: ${partData.category} provision. Closing Stock (CY): ${partData.stock} units. Provision Value: ${partData.provision}. Consumption last year: 0.`;
+
+            const systemInstruction = `You are a predictive risk engine for ABB Supply Chain. Analyze the current status of the part provided by the user. Based on the fact that consumption is zero and there is existing stock and provision, provide a future risk forecast for the target date. The response must be two concise sentences.`;
+
+            const userQuery = `Based on the following data, what is the **future risk forecast** for **${targetDate}**? Data: "${currentStatus}"`;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                tools: [] 
+            };
+            
+            return await callGeminiAPI(payload);
+        }
+
+        // --- Centralized API Caller with Retry Logic ---
+        async function callGeminiAPI(payload) {
+             try {
+                const maxRetries = 3;
+                let responseText = "Sorry, I couldn't generate a response right now. Please try again later.";
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`API returned status ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        const candidate = result.candidates?.[0];
+
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            return candidate.content.parts[0].text;
+                        } else {
+                            throw new Error("Invalid response structure or no text content.");
+                        }
+
+                    } catch (error) {
+                        console.error(`API Attempt ${i + 1} failed:`, error);
+                        if (i < maxRetries - 1) {
+                            const delay = Math.pow(2, i) * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        }
+                    }
+                }
+                return responseText;
+            } catch (error) {
+                console.error("Critical Error during API call:", error);
+                return "Sorry, a critical error occurred while fetching the AI response.";
+            }
+        }
+        
+        // --- Custom File Data Logic ---
+        // Extracted data points from uploaded CSV files (Master, Review, Report)
+        const STOCK_OBSO_VALUE_JULY = "10,323,663.44 INR (approx. 123.03 KUSD)";
+
+        const MATERIAL_LOOKUP_DATA = {
+            "2RAA027175P0001": { desc: "Earthing Bolt", category: "Automatic", stock: 6, provision: "6,101.34 INR" },
+            "2RBA016214A0005": { desc: "220VDC motor mechanism", category: "Automatic", stock: 12, provision: "74,889.84 INR" },
+            "4202635010.1005": { desc: "RTU-530 WO conformal(8DI/4DO Inbuild )", category: "Manual", stock: 0, provision: "447,875 INR" },
+            "TANK CONFIG SR XT": { desc: "Tank Module SafeRing XT/SafePlus XT", category: "Manual", stock: 78, provision: "1,567,369.85 INR" },
+            "RMU_CONFIG": { desc: "RMU Configurable Super BOM", category: "Manual", stock: 1, provision: "276,838.42 INR" }
+        };
+
+        function resolvePartLookup(partNumber) {
+            const upperPart = partNumber.toUpperCase().trim();
+            const data = MATERIAL_LOOKUP_DATA[upperPart];
+
+            if (data) {
+                return `**Material Status:**\n- **Description:** ${data.desc}\n- **Category:** ${data.category}\n- **Stock Qty (CY):** ${data.stock}\n- **Provision Value:** ${data.provision}`;
+            } else {
+                return `Material No. **${upperPart}** not found in the July 2025 data files. Please try a different number (e.g., 2RAA027175P0001).`;
+            }
+        }
+
+
+        function getObsolescenceData(userInput) {
+            const lowerCaseInput = userInput.toLowerCase().trim().replace(/[?.]/g, ''); // Normalize input
+            
+            const internalDB = {
+                // Obsolescence Data (Concise)
+                "total obsolescence value (july)": `The total Stock Obsolescence value for July 2025 is **10,323,663.44 INR**.`,
+                "what is the total provision in kusd": "The total Stock Obsolescence provision in July 2025 is **123.03 KUSD**.",
+                "manual vs auto provision value": "The Obsolescence Provision Split is **6.53 KUSD in Automatic** versus **3.78 KUSD in Manual** provision.",
+                "high-value obsolescence part": "The largest provision value is **1,567,369.85 INR**, linked to the **'Tank Module SafeRing XT/SafePlus XT'**.",
+                "obsolescence risk report (q3)": `The total obsolescence value for July was 10,323,663.44 INR. Risk is highest in older generation controllers.`,
+                "consumption vs stock for key parts": "For key manual provision parts, the closing stock is 43 units, while consumption in the last 3 years has been zero, confirming a high obsolescence risk.",
+                "what is the highest single provision value in the manual dump": "The highest single provision value in the Manual Dump is **804,700.38 INR**, belonging to the **Tank Module SafeRing XT/SafePlus XT** (38 units).",
+                "how much was the consumption added in july 2025": "The total consumption added in July 2025 was **-880,230.43 INR** (Value) and **-1906.13** (Quantity).",
+                "find the status of material p/n 4202635010.1005": "Material P/N **4202635010.1005** (RTU-530) has a closing stock of **0** units and a provision value of **447,875 INR**, indicating it is fully provided for.",
+                
+                // Feature Guide Logic (for hardcoded buttons)
+                "future risk forecast": "Start the forecast feature, then provide the **Material No** and the **Target Month/Year** (e.g., 'TANK CONFIG SR XT, January 2026').",
+                "generate mitigation plan": "Start the plan feature, then provide the **exact part name**.",
+                "part number quick lookup": "Start the lookup feature, then provide the **Material No** (e.g., '2RAA027175P0001').",
+                
+                // General/Fallback Data
+                "what is abb": "ABB is a technology leader in electrification and automation, optimizing how things are manufactured, moved, powered and operated."
+            };
+
+            for (const key in internalDB) {
+                if (lowerCaseInput.includes(key.toLowerCase().replace(/[?.]/g, ''))) {
+                    return internalDB[key];
+                }
+            }
+            
+            return null;
+        }
+
+        // --- Bot Logic (Handles routing for the new LLM features) ---
+        async function generateBotResponse(userInput) {
+            showTypingIndicator();
+            let botResponse;
+            let parts;
+            const lowerInput = userInput.toLowerCase();
+
+            // 1. Execute multi-step LLM Feature if currently active
+            if (window.activeLLMFeature === 'MITIGATION_PLAN') {
+                window.activeLLMFeature = null; 
+                botResponse = await generateMitigationPlan(userInput);
+                displayBotMessage(botResponse);
+                return;
+            } else if (window.activeLLMFeature === 'PART_LOOKUP') {
+                window.activeLLMFeature = null; 
+                botResponse = resolvePartLookup(userInput); 
+                displayBotMessage(botResponse);
+                return;
+            } else if (window.activeLLMFeature === 'FUTURE_FORECAST') {
+                 parts = userInput.split(',').map(s => s.trim());
+                 if (parts.length < 2) {
+                     window.activeLLMFeature = 'FUTURE_FORECAST'; 
+                     displayBotMessage("Please provide both the Material No and the Target Date, separated by a comma (e.g., '2RBA016214A0005, December 2025').");
+                     return;
+                 }
+                 
+                 const partNumber = parts[0];
+                 const targetDate = parts.slice(1).join(', ').trim();
+ 
+                 window.activeLLMFeature = null; 
+                 botResponse = await generateFutureForecast(partNumber, targetDate);
+                 displayBotMessage(botResponse);
+                 return;
+            } 
+            
+            // 2. Check for internal, hardcoded data matches (Initial questions and data lookups)
+            const customAnswer = getObsolescenceData(userInput);
+            
+            if (customAnswer) {
+                setTimeout(() => {
+                    displayBotMessage(customAnswer);
+                }, 100);
+            } else {
+                // 3. Fallback to general LLM chat (uses history for context)
+                const geminiAnswer = await callGeminiAPI({
+                    contents: window.chatHistory,
+                    tools: [{ "google_search": {} }]
+                });
+                displayBotMessage(geminiAnswer);
+            }
+        }
+
+        // --- Event Listeners and Utilities (Unchanged) ---
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (message) {
+                displayUserMessage(message);
+                messageInput.value = '';
+                generateBotResponse(message);
+            }
+        });
+
+        // Event listener for the LLM guide options
+        document.getElementById('sample-questions').addEventListener('click', (e) => {
+            let target = e.target;
+            if (!target.classList.contains('sample-question')) {
+                target = target.closest('.sample-question');
+            }
+
+            if (target) {
+                const question = target.textContent.trim();
+                const action = target.getAttribute('data-action');
+                target.classList.add('active');
+                
+                // Route to multi-step features
+                if (action && action.startsWith('start-')) {
+                    window.activeLLMFeature = action.split('-')[1].toUpperCase();
+                    let initialResponse = "I need more information.";
+                    
+                    if (window.activeLLMFeature === 'MITIGATION_PLAN') {
+                        initialResponse = "Certainly! Please type the **exact part name or description** for which you need an obsolescence mitigation plan.";
+                    } else if (window.activeLLMFeature === 'PART_LOOKUP') {
+                        initialResponse = "Ready for the quick lookup. Please type the **Material No** (e.g., '2RAA027175P0001').";
+                    } else if (window.activeLLMFeature === 'FUTURE_FORECAST') {
+                        initialResponse = "I can predict future risk. Please provide the **Material No** and the **Target Month/Year** (e.g., 'TANK CONFIG SR XT, January 2026').";
+                    }
+                    
+                    setTimeout(() => {
+                        displayUserMessage(question);
+                        displayBotMessage(initialResponse);
+                        target.classList.remove('active');
+                    }, 100);
+                    return;
+                } 
+                
+                // Standard Question Handler
+                setTimeout(() => {
+                    displayUserMessage(question);
+                    generateBotResponse(question);
+                    target.classList.remove('active');
+                }, 100);
+            }
+        });
+
+
+        ttsBtn.addEventListener('click', () => {
+            isTtsEnabled = !isTtsEnabled;
+            ttsIconOn.classList.toggle('hidden');
+            ttsIconOff.classList.toggle('hidden');
+            if (!isTtsEnabled) {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                }
+            }
+        });
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            micBtn.addEventListener('click', () => {
+                if (micBtn.classList.contains('recording')) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                }
+            });
+
+            recognition.onstart = () => {
+                micBtn.classList.remove('text-gray-500', 'hover:bg-gray-100');
+                micBtn.classList.add('recording', 'bg-red-100', 'text-red-600');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                messageInput.value = transcript;
+                messageInput.focus();
+            };
+            
+            recognition.onend = () => {
+                micBtn.classList.remove('recording', 'bg-red-100', 'text-red-600');
+                micBtn.classList.add('text-gray-500', 'hover:bg-gray-100');
+            }
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                recognition.stop();
+            };
+        } else {
+            if(micBtn) micBtn.style.display = 'none';
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window && isTtsEnabled) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function displayUserMessage(message) {
+            const options = document.getElementById('sample-questions');
+            if (options) options.style.display = 'none';
+            window.chatHistory.push({ role: "user", parts: [{ text: message }] });
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'items-start', 'gap-4', 'justify-end', 'mb-6', 'message-fade-in');
+            messageElement.innerHTML = `
+                <div class="bg-gradient-to-br from-red-600 to-rose-600 text-white p-4 rounded-2xl max-w-sm shadow-md" style="border-top-right-radius: 0;">
+                    <p class="text-sm">${message}</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow overflow-hidden text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" /></svg>
+                </div>
+            `;
+            chatWindow.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function displayBotMessage(message) {
+            hideTypingIndicator();
+            window.chatHistory.push({ role: "model", parts: [{ text: message }] });
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'items-start', 'gap-4', 'justify-start', 'mb-6', 'message-fade-in');
+            messageElement.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center flex-shrink-0 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-gray-100 p-4 rounded-2xl shadow-sm max-w-xs" style="border-top-left-radius: 0;">
+                    <p class="text-sm text-gray-700">${message}</p>
+                </div>
+            `;
+            chatWindow.appendChild(messageElement);
+            scrollToBottom();
+            speakText(message);
+        }
+
+        function scrollToBottom() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+        
+        function showTypingIndicator() {
+            typingIndicator.classList.remove('hidden');
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
