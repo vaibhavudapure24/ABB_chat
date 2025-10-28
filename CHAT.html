@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABB AI Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display-swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eef2f7;
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+        }
+        #chat-container {
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.75);
+        }
+        #chat-window::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-window::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #chat-window::-webkit-scrollbar-thumb {
+            background: #a5b4fc;
+            border-radius: 3px;
+        }
+        #chat-window::-webkit-scrollbar-thumb:hover {
+            background: #818cf8;
+        }
+        .sample-question {
+            transition: all 0.2s ease-in-out;
+        }
+        .sample-question:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div id="chat-container" class="w-full max-w-lg mx-4 rounded-3xl shadow-2xl flex flex-col border-2 border-indigo-200 overflow-hidden" style="height: 95vh; max-height: 800px;">
+        <!-- Header -->
+        <div class="p-5 bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-between text-white shadow-lg">
+            <div class="flex items-center">
+                 <div class="relative w-12 h-12">
+                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center p-1 shadow-md">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_of_ABB.svg" alt="ABB Logo" class="h-8 w-auto">
+                    </div>
+                    <span class="absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full bg-green-400 border-2 border-white"></span>
+                </div>
+                <div class="ml-4">
+                    <h1 class="text-xl font-bold">ABB AI Bot</h1>
+                    <p class="text-sm text-indigo-200">Active now</p>
+                </div>
+            </div>
+            <button id="tts-btn" class="text-white/80 p-3 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white transition-colors">
+                <svg id="tts-icon-on" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <svg id="tts-icon-off" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /> <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l-5-5m0 5l5-5" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto">
+            <!-- Initial Bot Message -->
+             <div class="message-fade-in flex items-start gap-4 justify-start mb-6">
+                <div class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm max-w-xs" style="border-top-left-radius: 0;">
+                    <p class="text-sm text-gray-700">How can I help you today?</p>
+                </div>
+            </div>
+            <!-- Sample Questions Section -->
+            <div id="sample-questions" class="my-8 message-fade-in" style="animation-delay: 0.5s;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-center">
+                    <button class="sample-question bg-white/80 text-indigo-600 text-sm font-medium py-3 px-4 rounded-xl border border-gray-200/80">Argon consumption on Aug 1st?</button>
+                    <button class="sample-question bg-white/80 text-indigo-600 text-sm font-medium py-3 px-4 rounded-xl border border-gray-200/80">Plastic reduced on Aug 1st?</button>
+                    <button class="sample-question bg-white/80 text-indigo-600 text-sm font-medium py-3 px-4 rounded-xl border border-gray-200/80">Energy use on Aug 4th?</button>
+                    <button class="sample-question bg-white/80 text-indigo-600 text-sm font-medium py-3 px-4 rounded-xl border border-gray-200/80">What is ABB?</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Typing indicator -->
+        <div id="typing-indicator" class="px-6 pb-2 hidden">
+             <div class="flex items-start gap-4 justify-start">
+                <div class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0 shadow">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm" style="border-top-left-radius: 0;">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <span class="h-2 w-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                        <span class="h-2 w-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                        <span class="h-2 w-2 bg-indigo-400 rounded-full animate-bounce"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-gray-200/50">
+            <form id="chat-form" class="flex items-center gap-2">
+                 <button type="button" id="mic-btn" class="text-gray-500 p-3 rounded-full hover:bg-gray-200/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-colors flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                </button>
+                <input type="text" id="message-input" placeholder="Ask me anything..." autocomplete="off" class="flex-1 py-3 px-5 border-gray-300/70 border bg-white/50 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-inner">
+                <button type="submit" class="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-3 rounded-full hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-transform transform hover:scale-110 shadow-lg flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+        <!-- Creator Credit -->
+        <div class="text-center text-xs text-gray-400 py-2">
+            Created by Vaibhav
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const sampleQuestionsContainer = document.getElementById('sample-questions');
+        const micBtn = document.getElementById('mic-btn');
+        const ttsBtn = document.getElementById('tts-btn');
+        const ttsIconOn = document.getElementById('tts-icon-on');
+        const ttsIconOff = document.getElementById('tts-icon-off');
+
+        const API_KEY = 'AIzaSyCeJAqVGR5Joo76GoFEHofOxqJZx5R1Vk4';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+        
+        let isTtsEnabled = false;
+
+        // --- Event Listeners ---
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (message) {
+                displayUserMessage(message);
+                messageInput.value = '';
+                generateBotResponse(message);
+            }
+        });
+
+        sampleQuestionsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('sample-question')) {
+                const question = e.target.textContent;
+                displayUserMessage(question);
+                generateBotResponse(question);
+            }
+        });
+
+        ttsBtn.addEventListener('click', () => {
+            isTtsEnabled = !isTtsEnabled;
+            ttsIconOn.classList.toggle('hidden');
+            ttsIconOff.classList.toggle('hidden');
+            if (!isTtsEnabled) {
+                speechSynthesis.cancel(); // Stop any ongoing speech
+            }
+        });
+
+        // --- Voice to Text (Speech Recognition) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            micBtn.addEventListener('click', () => {
+                if (micBtn.classList.contains('recording')) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                }
+            });
+
+            recognition.onstart = () => {
+                micBtn.classList.add('recording', 'bg-red-500/20', 'text-red-600');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                messageInput.value = transcript;
+                messageInput.focus();
+            };
+            
+            recognition.onend = () => {
+                 micBtn.classList.remove('recording', 'bg-red-500/20', 'text-red-600');
+            }
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                recognition.stop();
+            };
+
+        } else {
+            console.log("Speech Recognition not supported by this browser.");
+            if(micBtn) micBtn.style.display = 'none';
+        }
+
+        // --- Text to Speech ---
+        function speakText(text) {
+            if ('speechSynthesis' in window && isTtsEnabled) {
+                speechSynthesis.cancel(); // Cancel previous utterance
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // --- Display Functions ---
+        function displayUserMessage(message) {
+            if (sampleQuestionsContainer) {
+                sampleQuestionsContainer.style.display = 'none';
+            }
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'items-start', 'gap-4', 'justify-end', 'mb-6', 'message-fade-in');
+            messageElement.innerHTML = `
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-4 rounded-2xl max-w-sm shadow-md" style="border-top-right-radius: 0;">
+                    <p class="text-sm">${message}</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow overflow-hidden">
+                     <img src="https://i.ibb.co/6Xf1XfW/user-icon.png" alt="User" class="w-full h-full object-cover">
+                </div>
+            `;
+            chatWindow.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function displayBotMessage(message) {
+            hideTypingIndicator();
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'items-start', 'gap-4', 'justify-start', 'mb-6', 'message-fade-in');
+            messageElement.innerHTML = `
+                 <div class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0 shadow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm max-w-xs" style="border-top-left-radius: 0;">
+                    <p class="text-sm text-gray-700">${message}</p>
+                </div>
+            `;
+            chatWindow.appendChild(messageElement);
+            scrollToBottom();
+            speakText(message);
+        }
+
+        // --- Gemini API Call ---
+        async function getGeminiResponse(userInput) {
+            try {
+                const instructedPrompt = `You are a helpful assistant. Please respond only in English. Here is the user's message: "${userInput}"`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: instructedPrompt }] }],
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+                const botResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "I'm not sure how to respond to that.";
+                
+                return botResponse;
+
+            } catch (error) {
+                console.error("Error fetching from Gemini API:", error);
+                return "Sorry, I'm having trouble connecting right now. Please try again later.";
+            }
+        }
+        
+        // --- Custom File Data Logic ---
+        function getSustainabilityData(userInput) {
+            const lowerCaseInput = userInput.toLowerCase();
+            
+            const sustainabilityDB = {
+                "plastic reduced on august 1": "On August 1st, 2025, 12.5 kg of plastic was reduced.",
+                "plastic reduced on aug 1": "On August 1st, 2025, 12.5 kg of plastic was reduced.",
+                "cumulative plastic by august 2": "By August 2nd, 2025, the cumulative plastic reduced was 27.5 kg.",
+                "energy consumption on august 4": "The energy consumption on August 4th, 2025 was 307 kWh.",
+                "energy use on aug 4": "The energy consumption on August 4th, 2025 was 307 kWh.",
+                "co2 emission on august 1": "On August 1st, 2025, the CO2 emission was 104.9 kg.",
+                "argon consumption on august 1": "According to your file, the Argon consumption on August 1st, 2025, was 14.1 kg.",
+                "argon consumption on aug 1": "According to your file, the Argon consumption on August 1st, 2025, was 14.1 kg.",
+                "helium consumption on august 1": "On August 1st, 2025, the Helium consumption was 2.4 kg.",
+                "wood consumption on august 1": "The wood consumption on August 1st, 2025, was 44.3 kg, according to your records."
+            };
+
+            for (const key in sustainabilityDB) {
+                if (lowerCaseInput.includes(key)) {
+                    return sustainabilityDB[key];
+                }
+            }
+            
+            if (lowerCaseInput.includes('sustainability') || lowerCaseInput.includes('plastic') || lowerCaseInput.includes('energy') || lowerCaseInput.includes('co2') || lowerCaseInput.includes('argon') || lowerCaseInput.includes('helium') || lowerCaseInput.includes('wood')) {
+                 return "I can answer questions about the sustainability data from your files. Please ask about a specific metric and date, for example: 'What was the argon consumption on August 1st?'";
+            }
+
+            return null;
+        }
+
+
+        // --- Bot Logic ---
+        async function generateBotResponse(userInput) {
+            showTypingIndicator();
+            
+            const sustainabilityAnswer = getSustainabilityData(userInput);
+            
+            if (sustainabilityAnswer) {
+                setTimeout(() => {
+                     displayBotMessage(sustainabilityAnswer);
+                }, 800);
+            } else {
+                const geminiAnswer = await getGeminiResponse(userInput);
+                displayBotMessage(geminiAnswer);
+            }
+        }
+
+        // --- Utility Functions ---
+        function scrollToBottom() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+        
+        function showTypingIndicator() {
+            typingIndicator.classList.remove('hidden');
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.classList.add('hidden');
+        }
+        
+        window.onload = scrollToBottom;
+
+    </script>
+</body>
+</html>
+
